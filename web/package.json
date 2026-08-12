@@ -1,0 +1,14 @@
+{
+  "name": "goal-wallet-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static micro-app rendered inside the mobile WebView for the savings goal detail/deposit flow. Not evaluated per the exam spec; no test suite.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && esbuild src/main.ts --bundle --outfile=dist/bundle.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,5 +1,5 @@
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { DepositInput } from 'rn-savings-notifier';
+import { DepositInput } from '../../infrastructure/nativeLibrary/DepositInput';
 import {
   makeDeposit,
   selectAllGoals,

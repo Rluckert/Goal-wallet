@@ -63,6 +63,15 @@ describe('goalsSlice reducer', () => {
     expect(state.error).toBe('boom');
   });
 
+  it('falls back to a default message on loadGoals.rejected when the error has none', () => {
+    // RTK's own error serialization always fills in a message (e.g. "Rejected"
+    // for a null error), so the only way to exercise the ?? fallback is an
+    // error object that omits `message` entirely — SerializedError.message is optional.
+    const action = { ...loadGoals.rejected(new Error('x'), 'req-1', undefined), error: { name: 'Error' } };
+    const state = goalsReducer(undefined, action);
+    expect(state.error).toBe('Failed to load goals.');
+  });
+
   it('sets an error message on makeDeposit.rejected', () => {
     const action = makeDeposit.rejected(new Error('deposit failed'), 'req-2', {
       goalId: 'g-1',
@@ -70,6 +79,13 @@ describe('goalsSlice reducer', () => {
     });
     const state = goalsReducer(undefined, action);
     expect(state.error).toBe('deposit failed');
+  });
+
+  it('falls back to a default message on makeDeposit.rejected when the error has none', () => {
+    const rejected = makeDeposit.rejected(new Error('x'), 'req-2', { goalId: 'g-1', amount: 10 });
+    const action = { ...rejected, error: { name: 'Error' } };
+    const state = goalsReducer(undefined, action);
+    expect(state.error).toBe('Failed to make deposit.');
   });
 
   it('updates a single goal on makeDeposit.fulfilled without touching the others', () => {

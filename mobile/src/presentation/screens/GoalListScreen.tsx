@@ -1,0 +1,148 @@
+import { useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ConfirmDialog } from '../../infrastructure/nativeLibrary/ConfirmDialog';
+import { selectAllGoals, selectGoalProgress, type GoalDTO } from '../../infrastructure/redux/goalsSlice';
+import { useAppSelector } from '../hooks/redux';
+import { CreateGoalModal } from '../components/CreateGoalModal';
+import { useThemedStyles } from '../theme/useThemedStyles';
+import type { ThemeColors } from '../theme/colors';
+
+export interface GoalListScreenProps {
+  onSelectGoal: (goalId: string) => void;
+}
+
+export function GoalListScreen({ onSelectGoal }: GoalListScreenProps) {
+  const goals = useAppSelector(selectAllGoals);
+  const styles = useThemedStyles(createStyles);
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+
+  return (
+    <View style={styles.container} testID="goal-list-screen">
+      <Text style={styles.title}>My Savings Goals</Text>
+      <FlatList
+        data={goals}
+        keyExtractor={goal => goal.id}
+        renderItem={({ item }) => <GoalCard goal={item} onSelectGoal={onSelectGoal} />}
+        ListEmptyComponent={<Text style={styles.empty}>No goals yet.</Text>}
+      />
+      <Pressable
+        onPress={() => setIsCreateModalVisible(true)}
+        style={styles.fab}
+        testID="create-goal-fab"
+      >
+        <Text style={styles.fabIcon}>+</Text>
+      </Pressable>
+      <CreateGoalModal visible={isCreateModalVisible} onClose={() => setIsCreateModalVisible(false)} />
+    </View>
+  );
+}
+
+function GoalCard({
+  goal,
+  onSelectGoal,
+}: {
+  goal: GoalDTO;
+  onSelectGoal: (goalId: string) => void;
+}) {
+  const percent = selectGoalProgress(goal);
+  const styles = useThemedStyles(createStyles);
+
+  const handlePress = async () => {
+    const confirmed = await ConfirmDialog.show({
+      title: goal.name,
+      message: 'Would you like to make a deposit to this goal?',
+    });
+    if (confirmed) {
+      onSelectGoal(goal.id);
+    }
+  };
+
+  return (
+    <View style={styles.card} testID={`goal-card-${goal.id}`}>
+      <Text style={styles.goalName} onPress={handlePress} testID={`goal-card-${goal.id}-open`}>
+        {goal.name}
+      </Text>
+      <Text style={styles.amounts}>
+        ${goal.savedAmount.toFixed(2)} of ${goal.targetAmount.toFixed(2)}
+      </Text>
+      <View style={styles.track} testID={`goal-card-${goal.id}-track`}>
+        <View style={[styles.fill, { width: `${percent}%` }]} testID={`goal-card-${goal.id}-fill`} />
+      </View>
+      <Text style={styles.progressLabel}>{percent}% complete</Text>
+    </View>
+  );
+}
+
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 16,
+      backgroundColor: colors.background,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
+      marginBottom: 12,
+      color: colors.text,
+    },
+    empty: {
+      color: colors.textSecondary,
+    },
+    card: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      backgroundColor: colors.surface,
+    },
+    goalName: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    amounts: {
+      color: colors.textSecondary,
+      marginTop: 4,
+      marginBottom: 8,
+    },
+    track: {
+      height: 10,
+      borderRadius: 999,
+      backgroundColor: colors.border,
+      overflow: 'hidden',
+    },
+    fill: {
+      height: '100%',
+      backgroundColor: colors.primary,
+    },
+    progressLabel: {
+      marginTop: 8,
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    fab: {
+      position: 'absolute',
+      right: 20,
+      bottom: 20,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      elevation: 4,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+    },
+    fabIcon: {
+      color: colors.textInverse,
+      fontSize: 28,
+      fontWeight: '600',
+      lineHeight: 30,
+    },
+  });
+}

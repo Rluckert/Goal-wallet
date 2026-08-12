@@ -46,6 +46,12 @@ function fromStoredGoal(stored: StoredGoal): SavingsGoal {
  * reimplementing the Map-based lookup — this class only adds hydrate-once /
  * write-through-persist around it, so GetGoals/MakeDeposit (which depend on
  * the GoalsRepository interface, never a concrete class) don't change at all.
+ *
+ * A fresh install (or any launch where storage is empty/unreadable) starts
+ * with zero goals — InMemoryGoalsRepository's own SEED_GOALS default is
+ * deliberately not used here, so nobody's real device ever shows the 3
+ * example goals as if they were the user's own data. Users create their
+ * first goal through the app (the floating action button).
  */
 export class AsyncStorageGoalsRepository implements GoalsRepository {
   private cache: InMemoryGoalsRepository | null = null;
@@ -58,7 +64,7 @@ export class AsyncStorageGoalsRepository implements GoalsRepository {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (raw === null) {
       // First launch — no stored data yet.
-      return this.seedAndPersistDefaults();
+      return this.seedEmptyAndPersist();
     }
 
     try {
@@ -68,13 +74,13 @@ export class AsyncStorageGoalsRepository implements GoalsRepository {
     } catch {
       // Corrupted storage (bad JSON, or a shape an older/newer app version
       // wrote) — treat the same as "no storage yet" rather than crashing.
-      return this.seedAndPersistDefaults();
+      return this.seedEmptyAndPersist();
     }
   }
 
-  /** Seeds the cache with InMemoryGoalsRepository's own default goals and persists that seed immediately, so it's the baseline going forward. */
-  private async seedAndPersistDefaults(): Promise<InMemoryGoalsRepository> {
-    this.cache = new InMemoryGoalsRepository();
+  /** Starts with zero goals and persists that empty list immediately, so it's the baseline going forward. */
+  private async seedEmptyAndPersist(): Promise<InMemoryGoalsRepository> {
+    this.cache = new InMemoryGoalsRepository([]);
     await this.persist(this.cache);
     return this.cache;
   }

@@ -20,12 +20,16 @@ jest.mock('rn-savings-notifier', () => ({
 
 // goalsSlice's makeDeposit thunk reads/writes through the real
 // AsyncStorageGoalsRepository (not mocked here, only its dependency is) —
-// getItem resolving null makes it fall back to the default in-memory seed,
-// which includes goal g-1 matching this file's GOAL fixture below.
+// a first-launch (getItem -> null) repository now starts empty, so getItem
+// resolves stored JSON matching this file's GOAL fixture below instead.
 jest.mock('@react-native-async-storage/async-storage', () => ({
   __esModule: true,
   default: {
-    getItem: jest.fn().mockResolvedValue(null),
+    getItem: jest
+      .fn()
+      .mockResolvedValue(
+        JSON.stringify([{ id: 'g-1', name: 'New Laptop', targetAmount: 1000, savedAmount: 350 }]),
+      ),
     setItem: jest.fn().mockResolvedValue(undefined),
   },
 }));

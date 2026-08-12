@@ -5,10 +5,10 @@ React Native app (community CLI, RN 0.81.4 + React 19, **not Expo**) that is the
 ## What it does
 
 - **Native goal list** (`GoalListScreen`): every goal's name, target, saved amount and progress %, sourced from Redux — read-only. Tapping a goal calls `rn-savings-notifier`'s `showConfirmDialog` (a native `AlertDialog`, Yes/No) asking whether to modify it; only on "Yes" does it navigate to the detail screen. Depositing only ever happens one way — through the WebView below — instead of duplicating that flow with a second native input.
-- **Create a goal**: a floating action button opens `CreateGoalModal` (name + target amount), dispatching the `CreateGoal` use case. Goals aren't limited to the hardcoded seed data.
+- **Create a goal**: a floating action button opens `CreateGoalModal` (name + target amount), dispatching the `CreateGoal` use case.
 - **WebView goal detail** (`GoalDetailScreen`): loads `web/`'s built micro-app as a packaged local asset and exchanges `postMessage`s with it.
 - **Native completion notification**: when a deposit brings a goal to exactly 100%, `rn-savings-notifier`'s `notifyGoalCompleted` fires a native Toast.
-- **Persistence**: goals (including ones you create) survive app restarts via `AsyncStorageGoalsRepository`, on-device storage — no backend, per the exam's scope.
+- **Persistence**: goals survive app restarts via `AsyncStorageGoalsRepository`, on-device storage — no backend, per the exam's scope. A fresh install starts with **zero** goals, not `InMemoryGoalsRepository`'s example data — that seed exists for the repository's own tests/manual dev use, never surfaced to a real user as if it were their own data. You create the first goal via the floating action button.
 
 ## Architecture — DDD layers
 

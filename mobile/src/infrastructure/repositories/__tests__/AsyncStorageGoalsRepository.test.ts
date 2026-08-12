@@ -24,17 +24,17 @@ describe('AsyncStorageGoalsRepository', () => {
     mockedSetItem.mockReset();
   });
 
-  it('seeds and persists the default goals on first launch (no stored data)', async () => {
+  it('starts empty (not the InMemoryGoalsRepository example seed) and persists that on first launch', async () => {
     mockedGetItem.mockResolvedValue(null);
     const repository = new AsyncStorageGoalsRepository();
 
     const goals = await repository.getAll();
 
-    expect(goals.length).toBeGreaterThan(0);
+    expect(goals).toHaveLength(0);
     expect(mockedSetItem).toHaveBeenCalledTimes(1);
     const [key, json] = mockedSetItem.mock.calls[0];
     expect(key).toBe('@goal-wallet/goals');
-    expect(JSON.parse(json)).toHaveLength(goals.length);
+    expect(JSON.parse(json)).toEqual([]);
   });
 
   it('round-trips stored JSON into real SavingsGoal/Money instances', async () => {
@@ -65,14 +65,14 @@ describe('AsyncStorageGoalsRepository', () => {
     ]);
   });
 
-  it('falls back to the default seed when stored JSON is corrupted', async () => {
+  it('falls back to an empty list when stored JSON is corrupted', async () => {
     mockedGetItem.mockResolvedValue('not valid json{');
     const repository = new AsyncStorageGoalsRepository();
 
     const goals = await repository.getAll();
 
-    expect(goals.length).toBeGreaterThan(0);
-    expect(mockedSetItem).toHaveBeenCalledTimes(1); // re-persisted the fallback seed
+    expect(goals).toHaveLength(0);
+    expect(mockedSetItem).toHaveBeenCalledTimes(1); // re-persisted the empty fallback
   });
 
   it('only reads from storage once, caching the hydrated repository', async () => {

@@ -46,24 +46,7 @@ npm install             # symlinks rn-savings-notifier -> ../ via the file: depe
 npx react-native run-android
 ```
 
-This should build, install, and launch the app, with Metro started automatically. If it works, you're done — skip the fallback below.
-
-### If `run-android` fails on Windows
-
-On this machine, `npx react-native run-android` fails with `"gradlew.bat" no se reconoce como un comando interno o externo` — `@react-native-community/cli`'s subprocess spawn of `gradlew.bat` doesn't work on Windows (Node's `child_process.spawn` can't execute `.bat` files without an explicit shell), even though `gradlew.bat` itself runs fine when invoked directly. If you hit the same error, run what `run-android` does internally by hand, in two terminals:
-
-```bash
-# terminal 1, from libreria/example:
-npx react-native start
-
-# terminal 2, from libreria/example/android:
-./gradlew.bat app:installDebug     # Windows
-./gradlew app:installDebug         # macOS/Linux
-
-# then, with the emulator/device running:
-adb reverse tcp:8081 tcp:8081
-adb shell am start -n com.example/.MainActivity
-```
+This should build, install, and launch the app, with Metro started automatically.
 
 ### What this confirmed
 

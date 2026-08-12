@@ -18,6 +18,22 @@ jest.mock('rn-savings-notifier', () => ({
   showConfirmDialog: jest.fn(),
 }));
 
+// goalsSlice's makeDeposit thunk reads/writes through the real
+// AsyncStorageGoalsRepository (not mocked here, only its dependency is) —
+// a first-launch (getItem -> null) repository now starts empty, so getItem
+// resolves stored JSON matching this file's GOAL fixture below instead.
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest
+      .fn()
+      .mockResolvedValue(
+        JSON.stringify([{ id: 'g-1', name: 'New Laptop', targetAmount: 1000, savedAmount: 350 }]),
+      ),
+    setItem: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // Everything the test needs lives inside the factory closure (rather than
 // referencing outer-scope variables, which jest.mock's hoisting forbids) and
 // is exposed on the mocked module's exports, fetched below via requireMock.

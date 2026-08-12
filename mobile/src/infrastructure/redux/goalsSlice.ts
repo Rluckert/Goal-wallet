@@ -3,10 +3,16 @@ import { computeProgressPercent } from '../../domain/Progress';
 import type { SavingsGoal } from '../../domain/SavingsGoal';
 import { GetGoals } from '../../application/GetGoals';
 import { MakeDeposit } from '../../application/MakeDeposit';
-import { InMemoryGoalsRepository } from '../repositories/InMemoryGoalsRepository';
+import { CreateGoal } from '../../application/CreateGoal';
+import { AsyncStorageGoalsRepository } from '../repositories/AsyncStorageGoalsRepository';
 import { SavingsNotifier } from '../nativeLibrary/SavingsNotifier';
 
-/** Plain, serializable DTO — Redux state must not hold class instances. */
+/**
+ * Plain, serializable DTO — Redux state must not hold class instances.
+ * Structurally the same shape as AsyncStorageGoalsRepository's StoredGoal,
+ * and deliberately not shared with it — see that file's comment on why
+ * Redux state and the on-disk storage schema are kept independently mapped.
+ */
 export interface GoalDTO {
   id: string;
   name: string;
@@ -40,7 +46,7 @@ const initialState: GoalsState = {
  * slice makes. No extra composition-root indirection for a project this
  * size — this is the one place infrastructure/ wires application/ up.
  */
-const repository = new InMemoryGoalsRepository();
+const repository = new AsyncStorageGoalsRepository();
 
 export const loadGoals = createAsyncThunk('goals/load', async () => {
   const goals = await new GetGoals(repository).execute();
@@ -55,6 +61,14 @@ export const makeDeposit = createAsyncThunk(
       SavingsNotifier.notifyGoalCompleted(result.goal.name);
     }
     return toDTO(result.goal);
+  },
+);
+
+export const createGoal = createAsyncThunk(
+  'goals/create',
+  async (input: { name: string; targetAmount: number }) => {
+    const goal = await new CreateGoal(repository).execute(input);
+    return toDTO(goal);
   },
 );
 
@@ -81,6 +95,12 @@ const goalsSlice = createSlice({
       })
       .addCase(makeDeposit.rejected, (state, action) => {
         state.error = action.error.message ?? 'Failed to make deposit.';
+      })
+      .addCase(createGoal.fulfilled, (state, action: PayloadAction<GoalDTO>) => {
+        state.goals[action.payload.id] = action.payload;
+      })
+      .addCase(createGoal.rejected, (state, action) => {
+        state.error = action.error.message ?? 'Failed to create goal.';
       });
   },
 });

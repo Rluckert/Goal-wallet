@@ -4,7 +4,7 @@ import {
   savingsGoalNearOverDeposit,
 } from '../../../domain/__fixtures__/SavingsGoal.fixtures';
 
-jest.mock('../../repositories/InMemoryGoalsRepository');
+jest.mock('../../repositories/AsyncStorageGoalsRepository');
 // Explicit factory — an automock would still require the real module first to
 // introspect its shape, which would import rn-savings-notifier and crash with
 // a TurboModuleRegistry "not found" invariant outside a real native runtime.
@@ -12,9 +12,10 @@ jest.mock('../../nativeLibrary/SavingsNotifier', () => ({
   SavingsNotifier: { notifyGoalCompleted: jest.fn() },
 }));
 
-import { InMemoryGoalsRepository } from '../../repositories/InMemoryGoalsRepository';
+import { AsyncStorageGoalsRepository } from '../../repositories/AsyncStorageGoalsRepository';
 import { SavingsNotifier } from '../../nativeLibrary/SavingsNotifier';
 import {
+  createGoal,
   goalsReducer,
   loadGoals,
   makeDeposit,
@@ -24,12 +25,12 @@ import {
   type GoalDTO,
 } from '../goalsSlice';
 
-const MockedRepository = InMemoryGoalsRepository as jest.MockedClass<typeof InMemoryGoalsRepository>;
+const MockedRepository = AsyncStorageGoalsRepository as jest.MockedClass<typeof AsyncStorageGoalsRepository>;
 const MockedNotifier = SavingsNotifier as jest.Mocked<typeof SavingsNotifier>;
 
-// goalsSlice.ts instantiates `new InMemoryGoalsRepository()` once at module load —
+// goalsSlice.ts instantiates `new AsyncStorageGoalsRepository()` once at module load —
 // this is that same singleton instance, now with auto-mocked methods.
-const repositoryInstance = MockedRepository.mock.instances[0] as jest.Mocked<InMemoryGoalsRepository>;
+const repositoryInstance = MockedRepository.mock.instances[0] as jest.Mocked<AsyncStorageGoalsRepository>;
 
 function buildStore() {
   return configureStore({ reducer: { goals: goalsReducer } });
@@ -99,6 +100,35 @@ describe('goalsSlice reducer', () => {
 
     expect(state.goals[goalDTO.id].savedAmount).toBe(600);
   });
+
+  it('adds a new goal to the store on createGoal.fulfilled', () => {
+    const initial = goalsReducer(undefined, loadGoals.fulfilled([goalDTO], 'req-1', undefined));
+    const created: GoalDTO = { id: 'g-2', name: 'New Bike', targetAmount: 500, savedAmount: 0 };
+
+    const state = goalsReducer(
+      initial,
+      createGoal.fulfilled(created, 'req-3', { name: 'New Bike', targetAmount: 500 }),
+    );
+
+    expect(state.goals[goalDTO.id]).toEqual(goalDTO);
+    expect(state.goals['g-2']).toEqual(created);
+  });
+
+  it('sets an error message on createGoal.rejected', () => {
+    const action = createGoal.rejected(new Error('name must not be empty'), 'req-3', {
+      name: '',
+      targetAmount: 500,
+    });
+    const state = goalsReducer(undefined, action);
+    expect(state.error).toBe('name must not be empty');
+  });
+
+  it('falls back to a default message on createGoal.rejected when the error has none', () => {
+    const rejected = createGoal.rejected(new Error('x'), 'req-3', { name: 'New Bike', targetAmount: 500 });
+    const action = { ...rejected, error: { name: 'Error' } };
+    const state = goalsReducer(undefined, action);
+    expect(state.error).toBe('Failed to create goal.');
+  });
 });
 
 describe('selectors', () => {
@@ -150,5 +180,29 @@ describe('makeDeposit thunk', () => {
 
     expect(MockedNotifier.notifyGoalCompleted).not.toHaveBeenCalled();
     expect(selectGoalById(store.getState(), goal.id)?.savedAmount).toBe(600);
+  });
+});
+
+describe('createGoal thunk', () => {
+  it('creates a goal and adds it to the store', async () => {
+    repositoryInstance.save.mockResolvedValue(undefined);
+
+    const store = buildStore();
+    await store.dispatch(createGoal({ name: 'New Bike', targetAmount: 500 }));
+
+    const goals = selectAllGoals(store.getState());
+    expect(goals).toHaveLength(1);
+    expect(goals[0]).toMatchObject({ name: 'New Bike', targetAmount: 500, savedAmount: 0 });
+    expect(repositoryInstance.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects without adding anything when the input is invalid', async () => {
+    const store = buildStore();
+
+    await store.dispatch(createGoal({ name: '', targetAmount: 500 }));
+
+    expect(selectAllGoals(store.getState())).toHaveLength(0);
+    expect(store.getState().goals.error).toBe('CreateGoal: name must not be empty.');
+    expect(repositoryInstance.save).not.toHaveBeenCalled();
   });
 });

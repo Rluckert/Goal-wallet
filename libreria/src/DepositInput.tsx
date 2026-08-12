@@ -9,6 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import NativeRnSavingsNotifier from './NativeRnSavingsNotifier';
+import { colors } from './theme/colors';
 
 export interface DepositInputProps {
   /** Called with the native-validated numeric amount once the deposit is confirmed. */
@@ -70,29 +71,31 @@ export function DepositInput({ onConfirm, style }: DepositInputProps) {
   );
 }
 
+// Static (light-theme) colors — this component has no dark-mode variant
+// today, unlike mobile/'s screens which pick light/dark via useColorScheme().
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: colors.light.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
   },
   error: {
-    color: '#dc2626',
+    color: colors.light.error,
     fontSize: 13,
     marginTop: 6,
   },
   button: {
     marginTop: 12,
-    backgroundColor: '#2563eb',
+    backgroundColor: colors.light.primary,
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
   },
   buttonText: {
-    color: '#ffffff',
+    color: colors.light.textInverse,
     fontSize: 16,
     fontWeight: '600',
   },

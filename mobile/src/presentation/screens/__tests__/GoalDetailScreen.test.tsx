@@ -12,10 +12,10 @@ interface MockWebViewProps {
 
 // goalsSlice -> SavingsNotifier imports rn-savings-notifier at module scope,
 // which hits TurboModuleRegistry outside a native runtime — same as in
-// GoalListScreen.test.tsx, even though this screen never renders DepositInput.
+// GoalListScreen.test.tsx, even though this screen never calls showConfirmDialog.
 jest.mock('rn-savings-notifier', () => ({
-  DepositInput: () => null,
   notifyGoalCompleted: jest.fn(),
+  showConfirmDialog: jest.fn(),
 }));
 
 // Everything the test needs lives inside the factory closure (rather than

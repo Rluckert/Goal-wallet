@@ -1,15 +1,10 @@
 package com.rnsavingsnotifier
 
-import android.content.Context
-import android.os.VibrationEffect
-import android.os.Vibrator
+import android.app.AlertDialog
 import android.widget.Toast
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.UiThreadUtil
-import java.text.NumberFormat
-import java.text.ParseException
-import java.util.Locale
 
 class RnSavingsNotifierModule(reactContext: ReactApplicationContext) :
   NativeRnSavingsNotifierSpec(reactContext) {
@@ -25,36 +20,30 @@ class RnSavingsNotifierModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  override fun parseDepositAmount(rawAmount: String, promise: Promise) {
-    val parsed: Double? = try {
-      // Locale-aware parsing: handles "1.234,56" vs "1,234.56" correctly
-      // depending on the device's locale, unlike a plain JS Number()/parseFloat().
-      NumberFormat.getInstance(Locale.getDefault()).parse(rawAmount.trim())?.toDouble()
-    } catch (e: ParseException) {
-      null
-    }
-
-    if (parsed == null || parsed <= 0.0) {
-      UiThreadUtil.runOnUiThread {
-        Toast.makeText(
-          reactApplicationContext,
-          "Enter a valid amount greater than 0.",
-          Toast.LENGTH_SHORT
-        ).show()
-      }
-      promise.reject("INVALID_AMOUNT", "Amount must be a positive number, got: $rawAmount")
+  override fun showConfirmDialog(title: String, message: String, promise: Promise) {
+    val activity = currentActivity
+    if (activity == null) {
+      promise.reject("NO_ACTIVITY", "No current activity to show the confirm dialog on.")
       return
     }
 
-    triggerHapticFeedback()
-    promise.resolve(parsed)
-  }
-
-  private fun triggerHapticFeedback() {
-    val vibrator = reactApplicationContext.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-      ?: return
-    if (vibrator.hasVibrator()) {
-      vibrator.vibrate(VibrationEffect.createOneShot(40, VibrationEffect.DEFAULT_AMPLITUDE))
+    UiThreadUtil.runOnUiThread {
+      AlertDialog.Builder(activity)
+        .setTitle(title)
+        .setMessage(message)
+        .setPositiveButton("Yes") { dialog, _ ->
+          dialog.dismiss()
+          promise.resolve(true)
+        }
+        .setNegativeButton("No") { dialog, _ ->
+          dialog.dismiss()
+          promise.resolve(false)
+        }
+        .setOnCancelListener {
+          // Back button / tap outside — treated the same as "No".
+          promise.resolve(false)
+        }
+        .show()
     }
   }
 

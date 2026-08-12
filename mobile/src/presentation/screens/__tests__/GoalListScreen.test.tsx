@@ -5,31 +5,19 @@ import { Provider } from 'react-redux';
 import { goalsReducer, loadGoals, type GoalDTO } from '../../../infrastructure/redux/goalsSlice';
 import { GoalListScreen } from '../GoalListScreen';
 
-// GoalListScreen renders <DepositInput/> from rn-savings-notifier per goal
-// card — the real package imports a TurboModule that only resolves inside a
-// native runtime, so it's replaced with a lightweight test double whose
-// button calls onConfirm with a fixed amount.
-jest.mock('rn-savings-notifier', () => {
-  const localReact = require('react');
-  const { View, Pressable, Text } = require('react-native');
-  return {
-    DepositInput: ({ onConfirm }: { onConfirm: (amount: number) => void }) =>
-      localReact.createElement(
-        View,
-        { testID: 'deposit-input' },
-        localReact.createElement(
-          Pressable,
-          { testID: 'deposit-input-button', onPress: () => onConfirm(100) },
-          localReact.createElement(Text, null, 'Deposit'),
-        ),
-      ),
-    notifyGoalCompleted: jest.fn(),
-  };
-});
+// GoalListScreen calls the native confirm dialog (via ConfirmDialog ->
+// rn-savings-notifier's showConfirmDialog) before navigating — the real
+// package imports a TurboModule that only resolves inside a native runtime,
+// so it's mocked here.
+jest.mock('rn-savings-notifier', () => ({
+  notifyGoalCompleted: jest.fn(),
+  showConfirmDialog: jest.fn(),
+}));
 
-// Matches the real InMemoryGoalsRepository's default seed for goal g-1, so a
-// makeDeposit dispatch (which reads from the repository, not from this
-// preloaded state) resolves against a goal that actually exists.
+import { showConfirmDialog } from 'rn-savings-notifier';
+
+const mockedShowConfirmDialog = showConfirmDialog as jest.Mock;
+
 const GOAL: GoalDTO = { id: 'g-1', name: 'New Laptop', targetAmount: 1000, savedAmount: 350 };
 
 function renderWithStore(goals: GoalDTO[] = [GOAL]) {
@@ -47,10 +35,19 @@ function renderWithStore(goals: GoalDTO[] = [GOAL]) {
 }
 
 describe('GoalListScreen', () => {
-  it('renders each goal with its name, amounts and progress', () => {
-    const { getByText } = renderWithStore();
+  beforeEach(() => {
+    mockedShowConfirmDialog.mockReset();
+  });
+
+  it('renders each goal with its name, amounts and progress bar, with no deposit input', () => {
+    const { getByText, getByTestId, queryByTestId } = renderWithStore();
     expect(getByText('New Laptop')).toBeTruthy();
-    expect(getByText('$350.00 of $1000.00 (35%)')).toBeTruthy();
+    expect(getByText('$350.00 of $1000.00')).toBeTruthy();
+    expect(getByText('35% complete')).toBeTruthy();
+    expect(getByTestId('goal-card-g-1-fill').props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ width: '35%' })]),
+    );
+    expect(queryByTestId('deposit-input')).toBeNull();
   });
 
   it('shows an empty state when there are no goals', () => {
@@ -58,20 +55,26 @@ describe('GoalListScreen', () => {
     expect(getByText('No goals yet.')).toBeTruthy();
   });
 
-  it('calls onSelectGoal with the goal id when its name is pressed', () => {
+  it('asks for confirmation with the goal name before navigating', async () => {
+    mockedShowConfirmDialog.mockResolvedValueOnce(true);
     const { getByTestId, onSelectGoal } = renderWithStore();
+
     fireEvent.press(getByTestId('goal-card-g-1-open'));
-    expect(onSelectGoal).toHaveBeenCalledWith('g-1');
+
+    expect(mockedShowConfirmDialog).toHaveBeenCalledWith({
+      title: 'New Laptop',
+      message: 'Would you like to make a deposit to this goal?',
+    });
+    await waitFor(() => expect(onSelectGoal).toHaveBeenCalledWith('g-1'));
   });
 
-  it('dispatches a deposit through the native DepositInput and updates the store', async () => {
-    const { getByTestId, store } = renderWithStore();
+  it('does not navigate when the confirm dialog is declined', async () => {
+    mockedShowConfirmDialog.mockResolvedValueOnce(false);
+    const { getByTestId, onSelectGoal } = renderWithStore();
 
-    fireEvent.press(getByTestId('deposit-input-button'));
+    fireEvent.press(getByTestId('goal-card-g-1-open'));
 
-    await waitFor(() => {
-      const updated = store.getState().goals.goals['g-1'];
-      expect(updated.savedAmount).toBe(450); // 350 + 100 from the mocked DepositInput
-    });
+    await waitFor(() => expect(mockedShowConfirmDialog).toHaveBeenCalled());
+    expect(onSelectGoal).not.toHaveBeenCalled();
   });
 });

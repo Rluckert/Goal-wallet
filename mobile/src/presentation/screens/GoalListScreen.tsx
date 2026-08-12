@@ -1,13 +1,8 @@
 import { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { DepositInput } from '../../infrastructure/nativeLibrary/DepositInput';
-import {
-  makeDeposit,
-  selectAllGoals,
-  selectGoalProgress,
-  type GoalDTO,
-} from '../../infrastructure/redux/goalsSlice';
-import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import { ConfirmDialog } from '../../infrastructure/nativeLibrary/ConfirmDialog';
+import { selectAllGoals, selectGoalProgress, type GoalDTO } from '../../infrastructure/redux/goalsSlice';
+import { useAppSelector } from '../hooks/redux';
 import { useThemeColors } from '../theme/useThemeColors';
 import type { ThemeColors } from '../theme/colors';
 
@@ -17,7 +12,6 @@ export interface GoalListScreenProps {
 
 export function GoalListScreen({ onSelectGoal }: GoalListScreenProps) {
   const goals = useAppSelector(selectAllGoals);
-  const dispatch = useAppDispatch();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -27,13 +21,7 @@ export function GoalListScreen({ onSelectGoal }: GoalListScreenProps) {
       <FlatList
         data={goals}
         keyExtractor={goal => goal.id}
-        renderItem={({ item }) => (
-          <GoalCard
-            goal={item}
-            onOpenDetail={() => onSelectGoal(item.id)}
-            onDeposit={amount => dispatch(makeDeposit({ goalId: item.id, amount }))}
-          />
-        )}
+        renderItem={({ item }) => <GoalCard goal={item} onSelectGoal={onSelectGoal} />}
         ListEmptyComponent={<Text style={styles.empty}>No goals yet.</Text>}
       />
     </View>
@@ -42,26 +30,37 @@ export function GoalListScreen({ onSelectGoal }: GoalListScreenProps) {
 
 function GoalCard({
   goal,
-  onOpenDetail,
-  onDeposit,
+  onSelectGoal,
 }: {
   goal: GoalDTO;
-  onOpenDetail: () => void;
-  onDeposit: (amount: number) => void;
+  onSelectGoal: (goalId: string) => void;
 }) {
   const percent = selectGoalProgress(goal);
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const handlePress = async () => {
+    const confirmed = await ConfirmDialog.show({
+      title: goal.name,
+      message: 'Would you like to make a deposit to this goal?',
+    });
+    if (confirmed) {
+      onSelectGoal(goal.id);
+    }
+  };
+
   return (
     <View style={styles.card} testID={`goal-card-${goal.id}`}>
-      <Text style={styles.goalName} onPress={onOpenDetail} testID={`goal-card-${goal.id}-open`}>
+      <Text style={styles.goalName} onPress={handlePress} testID={`goal-card-${goal.id}-open`}>
         {goal.name}
       </Text>
       <Text style={styles.amounts}>
-        ${goal.savedAmount.toFixed(2)} of ${goal.targetAmount.toFixed(2)} ({percent}%)
+        ${goal.savedAmount.toFixed(2)} of ${goal.targetAmount.toFixed(2)}
       </Text>
-      <DepositInput onConfirm={onDeposit} style={styles.depositInput} />
+      <View style={styles.track} testID={`goal-card-${goal.id}-track`}>
+        <View style={[styles.fill, { width: `${percent}%` }]} testID={`goal-card-${goal.id}-fill`} />
+      </View>
+      <Text style={styles.progressLabel}>{percent}% complete</Text>
     </View>
   );
 }
@@ -98,10 +97,22 @@ function createStyles(colors: ThemeColors) {
     amounts: {
       color: colors.textSecondary,
       marginTop: 4,
-      marginBottom: 12,
+      marginBottom: 8,
     },
-    depositInput: {
-      marginTop: 4,
+    track: {
+      height: 10,
+      borderRadius: 999,
+      backgroundColor: colors.border,
+      overflow: 'hidden',
+    },
+    fill: {
+      height: '100%',
+      backgroundColor: colors.primary,
+    },
+    progressLabel: {
+      marginTop: 8,
+      fontSize: 13,
+      color: colors.textSecondary,
     },
   });
 }

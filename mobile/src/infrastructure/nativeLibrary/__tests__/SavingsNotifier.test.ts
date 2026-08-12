@@ -1,6 +1,6 @@
 jest.mock('rn-savings-notifier', () => ({
   notifyGoalCompleted: jest.fn(),
-  DepositInput: () => null,
+  showConfirmDialog: jest.fn(),
 }));
 
 import { notifyGoalCompleted as mockedNotifyGoalCompleted } from 'rn-savings-notifier';

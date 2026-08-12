@@ -5,18 +5,21 @@ React Native app (community CLI, RN 0.81.4 + React 19, **not Expo**) that is the
 ## What it does
 
 - **Native goal list** (`GoalListScreen`): every goal's name, target, saved amount and progress %, sourced from Redux — read-only. Tapping a goal calls `rn-savings-notifier`'s `showConfirmDialog` (a native `AlertDialog`, Yes/No) asking whether to modify it; only on "Yes" does it navigate to the detail screen. Depositing only ever happens one way — through the WebView below — instead of duplicating that flow with a second native input.
+- **Create a goal**: a floating action button opens `CreateGoalModal` (name + target amount), dispatching the `CreateGoal` use case. Goals aren't limited to the hardcoded seed data.
 - **WebView goal detail** (`GoalDetailScreen`): loads `web/`'s built micro-app as a packaged local asset and exchanges `postMessage`s with it.
 - **Native completion notification**: when a deposit brings a goal to exactly 100%, `rn-savings-notifier`'s `notifyGoalCompleted` fires a native Toast.
+- **Persistence**: goals (including ones you create) survive app restarts via `AsyncStorageGoalsRepository`, on-device storage — no backend, per the exam's scope.
 
 ## Architecture — DDD layers
 
 ```
 src/
   domain/          Money, Progress, SavingsGoal — pure business rules, zero RN/Redux imports
-  application/      GetGoals, MakeDeposit — use cases over a GoalsRepository interface
-  infrastructure/    InMemoryGoalsRepository, Redux store/slice, WebView adapter/contracts,
-                     the rn-savings-notifier wrappers (SavingsNotifier, ConfirmDialog) — the only
-                     layer allowed to import RN/Redux/the library
+  application/      GetGoals, MakeDeposit, CreateGoal — use cases over a GoalsRepository interface
+  infrastructure/    AsyncStorageGoalsRepository (wraps InMemoryGoalsRepository as its cache),
+                     Redux store/slice, WebView adapter/contracts, the rn-savings-notifier
+                     wrappers (SavingsNotifier, ConfirmDialog) — the only layer allowed to
+                     import RN/Redux/the library
   presentation/       screens, hooks — reads Redux via typed hooks, never reaches into infrastructure/ internals directly
 ```
 
@@ -25,7 +28,7 @@ Enforced by (and checkable with) `.claude/agents/ddd-boundary-reviewer.md`.
 ### Named design patterns
 
 - **Adapter** — `infrastructure/webview/WebViewMessageAdapter.ts` is the only place that parses a raw `postMessage` JSON string into a typed domain event, or serializes the outgoing `INIT_SESSION` handshake. Presentation screens use the exported singleton (`webViewMessageAdapter`); they don't construct their own.
-- **Repository** — `application/GoalsRepository.ts` is the interface `GetGoals`/`MakeDeposit` depend on; `infrastructure/repositories/InMemoryGoalsRepository.ts` is the concrete (in-memory, no backend) implementation. Swapping to a real backend later only touches this one file.
+- **Repository** — `application/GoalsRepository.ts` is the interface `GetGoals`/`MakeDeposit`/`CreateGoal` depend on; `infrastructure/repositories/AsyncStorageGoalsRepository.ts` is the concrete implementation (on-device persistence, wrapping `InMemoryGoalsRepository` as its in-process cache). This already happened for real once: the repository started as pure in-memory, then got swapped for persistence, and `GetGoals`/`MakeDeposit` needed zero changes — not just an architectural claim.
 
 See the root `README.md`'s architecture section for the trade-off write-up (alternatives considered, what's given up).
 
@@ -88,7 +91,6 @@ Current coverage: **100%** statements/branches/functions/lines on `domain/` and 
 - **No `react-navigation`.** Two screens (list/detail) are switched with a local `useState` in `App.tsx` instead. Avoids the extra native linking (`react-native-screens`, `react-native-gesture-handler`, `react-native-safe-area-context` wiring) a navigation library would add for a case this small — documented here rather than added speculatively.
 - **iOS is not built or verified.** No macOS/Xcode on this machine, same constraint `libreria/README.md` documents for the library itself. `GoalDetailScreen`'s WebView `source` uses the Android asset path (`file:///android_asset/...`) only; iOS would need a different bundle-resource loading strategy.
 - **No auth/session system.** `GoalDetailScreen` sends a fixed demo user (`DEMO_USER` in the screen itself) as the `INIT_SESSION` payload's `userInfo` — there's no login flow in scope for this exam.
-- **In-memory data only, no persistence.** `InMemoryGoalsRepository` resets on every app restart, per the exam's "no backend required" scope. HU4's "deseable" persistence was not implemented.
 
 ## AI usage
 

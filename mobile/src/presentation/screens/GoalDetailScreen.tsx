@@ -1,9 +1,11 @@
-import { useCallback, useRef, type ComponentRef } from 'react';
+import { useCallback, useMemo, useRef, type ComponentRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import WebView, { type WebViewMessageEvent } from 'react-native-webview';
 import { webViewMessageAdapter } from '../../infrastructure/webview/WebViewMessageAdapter';
 import { makeDeposit, selectGoalById } from '../../infrastructure/redux/goalsSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import { useThemeColors } from '../theme/useThemeColors';
+import type { ThemeColors } from '../theme/colors';
 
 // No auth system in this exam's scope — a fixed demo user/session is enough
 // to exercise the INIT_SESSION handshake end to end.
@@ -19,6 +21,8 @@ export function GoalDetailScreen({ goalId, onBack }: GoalDetailScreenProps) {
   const dispatch = useAppDispatch();
   const webViewRef = useRef<ComponentRef<typeof WebView>>(null);
   const sessionIdRef = useRef(`session-${Date.now()}`);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const sendInitSession = useCallback(() => {
     if (!goal) {
@@ -70,16 +74,19 @@ export function GoalDetailScreen({ goalId, onBack }: GoalDetailScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backLink: {
-    padding: 16,
-    fontSize: 16,
-    color: '#2563eb',
-  },
-  webView: {
-    flex: 1,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    backLink: {
+      padding: 16,
+      fontSize: 16,
+      color: colors.primary,
+    },
+    webView: {
+      flex: 1,
+    },
+  });
+}

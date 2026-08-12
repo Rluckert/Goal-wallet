@@ -5,25 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Savings Goal — Detail</title>
     <style>
+      /*
+       * Davivienda brand color palette. Source of truth:
+       * .claude/skills/davivienda-color-palette/reference/colors.ts
+       * (light: colors.light, dark: colors.dark) — do not change these
+       * hex values without the user's explicit instruction.
+       */
       :root {
         color-scheme: light dark;
-        --bg: #ffffff;
-        --fg: #1a1a1a;
-        --muted: #6b7280;
-        --accent: #2563eb;
-        --border: #e5e7eb;
-        --error: #dc2626;
-        --track: #e5e7eb;
+        --bg: #ffffff; /* background */
+        --fg: #1a1a1a; /* text */
+        --muted: #737373; /* textSecondary */
+        --accent: #e1251b; /* primary */
+        --border: #e5e5e5; /* border */
+        --error: #c81e1e; /* error */
+        --track: #e5e5e5; /* border */
       }
       @media (prefers-color-scheme: dark) {
         :root {
-          --bg: #111827;
-          --fg: #f3f4f6;
-          --muted: #9ca3af;
-          --accent: #60a5fa;
-          --border: #1f2937;
-          --error: #f87171;
-          --track: #1f2937;
+          --bg: #121212; /* background */
+          --fg: #ffffff; /* text */
+          --muted: #b8b8b8; /* textSecondary */
+          --accent: #f0443b; /* primary */
+          --border: #383838; /* border */
+          --error: #ef4444; /* error */
+          --track: #383838; /* border */
         }
       }
       * {

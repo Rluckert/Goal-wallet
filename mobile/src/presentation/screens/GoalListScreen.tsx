@@ -55,8 +55,12 @@ function GoalCard({
         {goal.name}
       </Text>
       <Text style={styles.amounts}>
-        ${goal.savedAmount.toFixed(2)} of ${goal.targetAmount.toFixed(2)} ({percent}%)
+        ${goal.savedAmount.toFixed(2)} of ${goal.targetAmount.toFixed(2)}
       </Text>
+      <View style={styles.track} testID={`goal-card-${goal.id}-track`}>
+        <View style={[styles.fill, { width: `${percent}%` }]} testID={`goal-card-${goal.id}-fill`} />
+      </View>
+      <Text style={styles.progressLabel}>{percent}% complete</Text>
     </View>
   );
 }
@@ -93,7 +97,22 @@ function createStyles(colors: ThemeColors) {
     amounts: {
       color: colors.textSecondary,
       marginTop: 4,
-      marginBottom: 12,
+      marginBottom: 8,
+    },
+    track: {
+      height: 10,
+      borderRadius: 999,
+      backgroundColor: colors.border,
+      overflow: 'hidden',
+    },
+    fill: {
+      height: '100%',
+      backgroundColor: colors.primary,
+    },
+    progressLabel: {
+      marginTop: 8,
+      fontSize: 13,
+      color: colors.textSecondary,
     },
   });
 }

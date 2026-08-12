@@ -39,10 +39,14 @@ describe('GoalListScreen', () => {
     mockedShowConfirmDialog.mockReset();
   });
 
-  it('renders each goal with its name, amounts and progress, with no deposit input', () => {
-    const { getByText, queryByTestId } = renderWithStore();
+  it('renders each goal with its name, amounts and progress bar, with no deposit input', () => {
+    const { getByText, getByTestId, queryByTestId } = renderWithStore();
     expect(getByText('New Laptop')).toBeTruthy();
-    expect(getByText('$350.00 of $1000.00 (35%)')).toBeTruthy();
+    expect(getByText('$350.00 of $1000.00')).toBeTruthy();
+    expect(getByText('35% complete')).toBeTruthy();
+    expect(getByTestId('goal-card-g-1-fill').props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ width: '35%' })]),
+    );
     expect(queryByTestId('deposit-input')).toBeNull();
   });
 

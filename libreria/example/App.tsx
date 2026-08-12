@@ -16,11 +16,11 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { DepositInput, notifyGoalCompleted } from 'rn-savings-notifier';
+import { notifyGoalCompleted, showConfirmDialog } from 'rn-savings-notifier';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
-  const [lastConfirmed, setLastConfirmed] = useState<number | null>(null);
+  const [lastAnswer, setLastAnswer] = useState<boolean | null>(null);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,14 +38,23 @@ function App() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.label}>DepositInput</Text>
+        <Text style={styles.label}>showConfirmDialog</Text>
         <Text style={styles.hint}>
-          Valid amount → haptic buzz + onConfirm below. Invalid amount →
-          native Toast + inline error, no onConfirm.
+          Expect a native AlertDialog with Yes/No buttons. The result below
+          reflects your choice (or "false" if dismissed).
         </Text>
-        <DepositInput onConfirm={(amount) => setLastConfirmed(amount)} />
-        <Text style={styles.result} testID="last-confirmed">
-          Last confirmed: {lastConfirmed === null ? '(none yet)' : lastConfirmed}
+        <Button
+          title="Show confirm dialog"
+          onPress={async () => {
+            const confirmed = await showConfirmDialog({
+              title: 'New Laptop',
+              message: 'Would you like to make a deposit to this goal?',
+            });
+            setLastAnswer(confirmed);
+          }}
+        />
+        <Text style={styles.result} testID="last-answer">
+          Last answer: {lastAnswer === null ? '(none yet)' : String(lastAnswer)}
         </Text>
       </View>
     </SafeAreaView>

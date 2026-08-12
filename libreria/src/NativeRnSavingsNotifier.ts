@@ -8,14 +8,14 @@ export interface Spec extends TurboModule {
   notifyGoalCompleted(goalName: string): void;
 
   /**
-   * Parses and validates a raw deposit amount using the device's locale
-   * (Android's NumberFormat), which handles decimal/thousands separators
-   * correctly across locales in a way a plain JS Number()/parseFloat()
-   * does not. Resolves with the validated numeric amount; rejects when the
-   * input isn't a positive number. Also triggers native haptic feedback on
-   * success as a side effect.
+   * Shows a native confirmation dialog (AlertDialog on Android) with the
+   * given title/message and Yes/No buttons. Resolves true on "Yes", false
+   * on "No" or on dismissal (back button / tap outside). Two plain string
+   * params rather than a {title, message} object — mirrors the primitive
+   * params every other method here already uses, keeping this a proven
+   * Codegen shape rather than untested territory for this project.
    */
-  parseDepositAmount(rawAmount: string): Promise<number>;
+  showConfirmDialog(title: string, message: string): Promise<boolean>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RnSavingsNotifier');

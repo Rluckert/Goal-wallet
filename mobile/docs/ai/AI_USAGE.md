@@ -15,6 +15,7 @@ This document tracks how AI (Claude Code) was governed while building the `mobil
 | Agent | Purpose | Location |
 |---|---|---|
 | `ddd-boundary-reviewer` | Reviews `mobile/src` for DDD layering violations, domain purity, named-pattern placement, and coverage against the declared target. | `mobile/.claude/agents/ddd-boundary-reviewer.md` |
+| `clean-code-reviewer` (shared) | Reviews for SOLID/DRY adherence and clean-code smells — a separate grading criterion from DDD layering. | `/.claude/agents/clean-code-reviewer.md` |
 | `build-test-diagnostician` (shared) | Triages build/test failures and proposes a root cause before any fix is attempted. | `/.claude/agents/build-test-diagnostician.md` |
 
 ## What was generated with AI vs. written/adjusted by hand

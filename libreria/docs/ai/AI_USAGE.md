@@ -13,6 +13,7 @@ This document tracks how AI (Claude Code) was governed while building the `libre
 
 | Agent | Purpose | Location |
 |---|---|---|
+| `clean-code-reviewer` (shared) | Reviews for SOLID/DRY adherence and clean-code smells — a separate grading criterion from DDD layering. | `/.claude/agents/clean-code-reviewer.md` |
 | `build-test-diagnostician` (shared) | Triages build/test failures — including native Kotlin build errors and TS↔Kotlin signature mismatches — and proposes a root cause before any fix is attempted. | `/.claude/agents/build-test-diagnostician.md` |
 
 ## What was generated with AI vs. written/adjusted by hand

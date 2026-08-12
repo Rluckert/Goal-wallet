@@ -43,3 +43,10 @@ export class WebViewMessageAdapter {
     return JSON.stringify(buildInitSessionMessage(sessionId, userInfo, goal));
   }
 }
+
+/**
+ * Wiring lives here, in infrastructure/ — presentation/ uses this instance,
+ * it does not construct its own (that would put Adapter construction in the
+ * wrong layer per the DDD boundary this project commits to).
+ */
+export const webViewMessageAdapter = new WebViewMessageAdapter();

@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { computeProgressPercent } from '../../domain/Progress';
 import type { SavingsGoal } from '../../domain/SavingsGoal';
 import { GetGoals } from '../../application/GetGoals';
@@ -91,9 +91,10 @@ export interface GoalsRootState {
   goals: GoalsState;
 }
 
-export function selectAllGoals(state: GoalsRootState): GoalDTO[] {
-  return Object.values(state.goals.goals);
-}
+export const selectAllGoals = createSelector(
+  (state: GoalsRootState) => state.goals.goals,
+  goals => Object.values(goals),
+);
 
 export function selectGoalById(state: GoalsRootState, id: string): GoalDTO | undefined {
   return state.goals.goals[id];

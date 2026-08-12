@@ -4,9 +4,9 @@ React Native app (community CLI, RN 0.81.4 + React 19, **not Expo**) that is the
 
 ## What it does
 
-- **Native goal list** (`GoalListScreen`): every goal's name, target, saved amount and progress %, sourced from Redux. Each card also renders `<DepositInput/>` from `rn-savings-notifier` — a quick-deposit path that calls native code directly, alongside the WebView-based one.
+- **Native goal list** (`GoalListScreen`): every goal's name, target, saved amount and progress %, sourced from Redux — read-only. Tapping a goal calls `rn-savings-notifier`'s `showConfirmDialog` (a native `AlertDialog`, Yes/No) asking whether to modify it; only on "Yes" does it navigate to the detail screen. Depositing only ever happens one way — through the WebView below — instead of duplicating that flow with a second native input.
 - **WebView goal detail** (`GoalDetailScreen`): loads `web/`'s built micro-app as a packaged local asset and exchanges `postMessage`s with it.
-- **Native completion notification**: when a deposit (from either path) brings a goal to exactly 100%, `rn-savings-notifier`'s `notifyGoalCompleted` fires a native Toast.
+- **Native completion notification**: when a deposit brings a goal to exactly 100%, `rn-savings-notifier`'s `notifyGoalCompleted` fires a native Toast.
 
 ## Architecture — DDD layers
 
@@ -15,7 +15,8 @@ src/
   domain/          Money, Progress, SavingsGoal — pure business rules, zero RN/Redux imports
   application/      GetGoals, MakeDeposit — use cases over a GoalsRepository interface
   infrastructure/    InMemoryGoalsRepository, Redux store/slice, WebView adapter/contracts,
-                     the rn-savings-notifier wrapper — the only layer allowed to import RN/Redux/the library
+                     the rn-savings-notifier wrappers (SavingsNotifier, ConfirmDialog) — the only
+                     layer allowed to import RN/Redux/the library
   presentation/       screens, hooks — reads Redux via typed hooks, never reaches into infrastructure/ internals directly
 ```
 

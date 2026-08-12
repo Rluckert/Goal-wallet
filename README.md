@@ -68,7 +68,7 @@ npm test               # jest
 npm run test:coverage  # jest --coverage
 ```
 
-- **`libreria/`**: 100% statements/branches/functions/lines on `src/DepositInput.tsx` and `src/index.tsx` (the two files with real logic; the Codegen spec is type-only and mocked in every test).
+- **`libreria/`**: 100% statements/branches/functions/lines on `src/index.tsx` (the only file with real logic; the Codegen spec is type-only and mocked in every test).
 - **`mobile/`**: 100% on `domain/` and `application/` (the exam's declared ≥70% core target, exceeded), ~95%+ on `infrastructure/` and `presentation/`. `rn-savings-notifier` and `react-native-webview` are mocked wherever imported in tests — both hit native module/view-manager lookups at module load that only resolve inside a real native runtime.
 - **`web/`**: no test suite, per the exam spec — it's not evaluated, only required to emit/receive `postMessage` correctly.
 

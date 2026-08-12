@@ -25,18 +25,53 @@ Then `npm install` from `mobile/`. Autolinking (React Native's CLI-based autolin
 
 `example/` is a real, versioned RN 0.81.4 app (not a throwaway) used to manually verify the native module actually builds, links, and works end to end — a TurboModule can't be verified in isolation, it needs a consuming app. It links this library via `"rn-savings-notifier": "file:.."` and renders both `notifyGoalCompleted` and `<DepositInput />` on screen (`example/App.tsx`).
 
+### Prerequisites
+
+- Node 20+ (see `example/package.json`'s `engines`).
+- Android SDK + an emulator (via Android Studio) or a physical device with USB debugging on. `ANDROID_HOME` must point at the SDK.
+- JDK 17+ (JDK 21 was used here).
+- iOS: not tested/supported in this repo (see "Known limitations" below) — Xcode/CocoaPods steps aren't documented.
+
+### Run it (standard path)
+
 ```bash
-cd libreria && npm run prepare   # (re)build lib/ before linking
-cd example && npm install
-# Android emulator running, then:
-cd android && ./gradlew app:installDebug   # see note below
-npx react-native start                     # in another terminal
-adb reverse tcp:8081 tcp:8081 && adb shell am start -n com.example/.MainActivity
+cd libreria
+npm install
+npm run prepare        # builds lib/ — required before linking, and after any src/ change
+
+cd example
+npm install             # symlinks rn-savings-notifier -> ../ via the file: dependency
+
+# have an emulator running (or a device connected via adb), then:
+npx react-native run-android
 ```
 
-This confirmed the TurboModule Codegen (C++/JNI) compiles for all 4 ABIs, autolinking discovers the library without manual native edits, and both methods work on-device (Toast on `notifyGoalCompleted`, haptic + resolved amount on a valid deposit, Toast + inline error on an invalid one).
+This should build, install, and launch the app, with Metro started automatically. If it works, you're done — skip the fallback below.
 
-**Windows-specific note:** `npx react-native run-android` fails on this machine — `@react-native-community/cli`'s subprocess spawn of `gradlew.bat` errors with "not recognized as an internal or external command", even though `gradlew.bat` itself runs fine when invoked directly. Worked around by running `gradlew.bat app:installDebug` directly, `npx react-native start` in a separate process, and `adb`/`am start` by hand — this is what `run-android` automates internally. `example/metro.config.js` also needed `watchFolders` (to see the library's source via the `file:` symlink) and a narrow `resolver.blockList` for `libreria/node_modules/{react,react-native,@react-native}` specifically — watching the library root otherwise pulls in *its* react-native devDependency (a different version, used only for the library's own tests) alongside the app's, which breaks Metro's codegen for React Native's own internal components.
+### If `run-android` fails on Windows
+
+On this machine, `npx react-native run-android` fails with `"gradlew.bat" no se reconoce como un comando interno o externo` — `@react-native-community/cli`'s subprocess spawn of `gradlew.bat` doesn't work on Windows (Node's `child_process.spawn` can't execute `.bat` files without an explicit shell), even though `gradlew.bat` itself runs fine when invoked directly. If you hit the same error, run what `run-android` does internally by hand, in two terminals:
+
+```bash
+# terminal 1, from libreria/example:
+npx react-native start
+
+# terminal 2, from libreria/example/android:
+./gradlew.bat app:installDebug     # Windows
+./gradlew app:installDebug         # macOS/Linux
+
+# then, with the emulator/device running:
+adb reverse tcp:8081 tcp:8081
+adb shell am start -n com.example/.MainActivity
+```
+
+### What this confirmed
+
+Built and run on a real Android emulator (Medium_Phone_API_36): the TurboModule Codegen (C++/JNI) compiles for all 4 ABIs, autolinking discovers the library with no manual native edits, and both methods work on-device — Toast on `notifyGoalCompleted`, haptic feedback + the resolved amount on a valid deposit, Toast + inline error on an invalid one.
+
+### If Metro can't resolve the library or crashes with a version mismatch
+
+`example/metro.config.js` sets `watchFolders` (so Metro can see the library's source through the `file:` symlink) and a narrow `resolver.blockList` for `libreria/node_modules/{react,react-native,@react-native}` specifically. This is necessary because `libreria/node_modules` has its own react-native copy (used only for the library's own unit tests, a different version than the example app's) — without the block, Metro sees both copies at once and its codegen for React Native's own internal components breaks. If you add new dependencies to `libreria/` that the example needs, you may need to extend `extraNodeModules`/`blockList` in `example/metro.config.js` similarly.
 
 ## Public API
 

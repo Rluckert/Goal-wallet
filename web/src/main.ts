@@ -21,11 +21,9 @@ function getElements(): GoalElements {
   return {
     goalName: requireElement('goal-name'),
     status: requireElement('status'),
-    progressCard: requireElement('progress-card'),
+    amountsCard: requireElement('amounts-card'),
     savedAmount: requireElement('saved-amount'),
     targetAmount: requireElement('target-amount'),
-    progressFill: requireElement('progress-fill'),
-    progressLabel: requireElement('progress-label'),
     depositForm: requireElement('deposit-form'),
   };
 }

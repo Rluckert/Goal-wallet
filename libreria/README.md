@@ -52,7 +52,7 @@ This should build, install, and launch the app, with Metro started automatically
 
 ### What this confirmed
 
-Built and run on a real Android emulator (Medium_Phone_API_36) prior to the `showConfirmDialog` swap: the TurboModule Codegen (C++/JNI) compiles for all 4 ABIs, autolinking discovers the library with no manual native edits, and `notifyGoalCompleted` fires a Toast on-device. `showConfirmDialog` is new Kotlin (see "Known limitations") — pending the same real-device confirmation the rest of this library already has.
+Built and run on a real Android emulator (Medium_Phone_API_36): the TurboModule Codegen (C++/JNI) compiles for all 4 ABIs, autolinking discovers the library with no manual native edits, and both methods work on-device — Toast on `notifyGoalCompleted`, a native `AlertDialog` with Yes/No on `showConfirmDialog` that resolves the JS `Promise` with the tapped button (or `false` on dismissal/back).
 
 ### If Metro can't resolve the library or crashes with a version mismatch
 

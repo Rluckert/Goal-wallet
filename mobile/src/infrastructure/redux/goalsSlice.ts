@@ -3,6 +3,7 @@ import { computeProgressPercent } from '../../domain/Progress';
 import type { SavingsGoal } from '../../domain/SavingsGoal';
 import { GetGoals } from '../../application/GetGoals';
 import { MakeDeposit } from '../../application/MakeDeposit';
+import { CreateGoal } from '../../application/CreateGoal';
 import { AsyncStorageGoalsRepository } from '../repositories/AsyncStorageGoalsRepository';
 import { SavingsNotifier } from '../nativeLibrary/SavingsNotifier';
 
@@ -58,6 +59,14 @@ export const makeDeposit = createAsyncThunk(
   },
 );
 
+export const createGoal = createAsyncThunk(
+  'goals/create',
+  async (input: { name: string; targetAmount: number }) => {
+    const goal = await new CreateGoal(repository).execute(input);
+    return toDTO(goal);
+  },
+);
+
 const goalsSlice = createSlice({
   name: 'goals',
   initialState,
@@ -81,6 +90,12 @@ const goalsSlice = createSlice({
       })
       .addCase(makeDeposit.rejected, (state, action) => {
         state.error = action.error.message ?? 'Failed to make deposit.';
+      })
+      .addCase(createGoal.fulfilled, (state, action: PayloadAction<GoalDTO>) => {
+        state.goals[action.payload.id] = action.payload;
+      })
+      .addCase(createGoal.rejected, (state, action) => {
+        state.error = action.error.message ?? 'Failed to create goal.';
       });
   },
 });

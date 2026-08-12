@@ -1,7 +1,9 @@
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ConfirmDialog } from '../../infrastructure/nativeLibrary/ConfirmDialog';
 import { selectAllGoals, selectGoalProgress, type GoalDTO } from '../../infrastructure/redux/goalsSlice';
 import { useAppSelector } from '../hooks/redux';
+import { CreateGoalModal } from '../components/CreateGoalModal';
 import { useThemedStyles } from '../theme/useThemedStyles';
 import type { ThemeColors } from '../theme/colors';
 
@@ -12,6 +14,7 @@ export interface GoalListScreenProps {
 export function GoalListScreen({ onSelectGoal }: GoalListScreenProps) {
   const goals = useAppSelector(selectAllGoals);
   const styles = useThemedStyles(createStyles);
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
 
   return (
     <View style={styles.container} testID="goal-list-screen">
@@ -22,6 +25,14 @@ export function GoalListScreen({ onSelectGoal }: GoalListScreenProps) {
         renderItem={({ item }) => <GoalCard goal={item} onSelectGoal={onSelectGoal} />}
         ListEmptyComponent={<Text style={styles.empty}>No goals yet.</Text>}
       />
+      <Pressable
+        onPress={() => setIsCreateModalVisible(true)}
+        style={styles.fab}
+        testID="create-goal-fab"
+      >
+        <Text style={styles.fabIcon}>+</Text>
+      </Pressable>
+      <CreateGoalModal visible={isCreateModalVisible} onClose={() => setIsCreateModalVisible(false)} />
     </View>
   );
 }
@@ -110,6 +121,28 @@ function createStyles(colors: ThemeColors) {
       marginTop: 8,
       fontSize: 13,
       color: colors.textSecondary,
+    },
+    fab: {
+      position: 'absolute',
+      right: 20,
+      bottom: 20,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      elevation: 4,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+    },
+    fabIcon: {
+      color: colors.textInverse,
+      fontSize: 28,
+      fontWeight: '600',
+      lineHeight: 30,
     },
   });
 }

@@ -77,4 +77,12 @@ describe('GoalListScreen', () => {
     await waitFor(() => expect(mockedShowConfirmDialog).toHaveBeenCalled());
     expect(onSelectGoal).not.toHaveBeenCalled();
   });
+
+  it('opens the create-goal modal when the FAB is pressed', () => {
+    const { getByTestId, queryByTestId } = renderWithStore();
+
+    expect(queryByTestId('create-goal-name-input')).toBeNull();
+    fireEvent.press(getByTestId('create-goal-fab'));
+    expect(getByTestId('create-goal-name-input')).toBeTruthy();
+  });
 });

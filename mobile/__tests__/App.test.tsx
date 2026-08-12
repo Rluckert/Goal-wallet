@@ -6,17 +6,14 @@ import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import App from '../App';
 
-// The default screen renders <DepositInput/> per goal card — importing the
-// real rn-savings-notifier package would hit TurboModuleRegistry outside a
-// native runtime, so it's mocked the same way GoalListScreen.test.tsx does.
-jest.mock('rn-savings-notifier', () => {
-  const localReact = require('react');
-  const { View } = require('react-native');
-  return {
-    DepositInput: () => localReact.createElement(View, { testID: 'deposit-input' }),
-    notifyGoalCompleted: jest.fn(),
-  };
-});
+// The default screen calls showConfirmDialog (via ConfirmDialog) before
+// navigating off a goal card — importing the real rn-savings-notifier
+// package would hit TurboModuleRegistry outside a native runtime, so it's
+// mocked the same way GoalListScreen.test.tsx does.
+jest.mock('rn-savings-notifier', () => ({
+  notifyGoalCompleted: jest.fn(),
+  showConfirmDialog: jest.fn(),
+}));
 
 // GoalDetailScreen imports react-native-webview at module scope, which hits
 // TurboModuleRegistry immediately — mocked even though the list screen

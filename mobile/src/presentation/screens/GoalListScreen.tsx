@@ -1,9 +1,8 @@
-import { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { ConfirmDialog } from '../../infrastructure/nativeLibrary/ConfirmDialog';
 import { selectAllGoals, selectGoalProgress, type GoalDTO } from '../../infrastructure/redux/goalsSlice';
 import { useAppSelector } from '../hooks/redux';
-import { useThemeColors } from '../theme/useThemeColors';
+import { useThemedStyles } from '../theme/useThemedStyles';
 import type { ThemeColors } from '../theme/colors';
 
 export interface GoalListScreenProps {
@@ -12,8 +11,7 @@ export interface GoalListScreenProps {
 
 export function GoalListScreen({ onSelectGoal }: GoalListScreenProps) {
   const goals = useAppSelector(selectAllGoals);
-  const colors = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useThemedStyles(createStyles);
 
   return (
     <View style={styles.container} testID="goal-list-screen">
@@ -36,8 +34,7 @@ function GoalCard({
   onSelectGoal: (goalId: string) => void;
 }) {
   const percent = selectGoalProgress(goal);
-  const colors = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useThemedStyles(createStyles);
 
   const handlePress = async () => {
     const confirmed = await ConfirmDialog.show({

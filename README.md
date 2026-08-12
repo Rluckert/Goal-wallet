@@ -110,4 +110,4 @@ AI (Claude Code) was used throughout `libreria/` and `mobile/`, governed with pr
 - [`libreria/docs/ai/AI_USAGE.md`](./libreria/docs/ai/AI_USAGE.md)
 - [`mobile/docs/ai/AI_USAGE.md`](./mobile/docs/ai/AI_USAGE.md)
 
-Shared across both layers: `.claude/skills/generate-conventional-commit/` (gates every commit on green tests, writes Conventional Commits messages, branches per phase) and `.claude/agents/build-test-diagnostician.md` (root-causes build/test failures before a fix is attempted).
+Shared across both layers: `.claude/skills/generate-conventional-commit/` (gates every commit on green tests, writes Conventional Commits messages, branches per phase), `.claude/agents/build-test-diagnostician.md` (root-causes build/test failures before a fix is attempted), and `.claude/agents/clean-code-reviewer.md` (reviews for SOLID/DRY adherence and clean-code smells — a criterion the exam evaluates separately from DDD layering).

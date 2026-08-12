@@ -1,10 +1,10 @@
-import { useCallback, useMemo, useRef, type ComponentRef } from 'react';
+import { useCallback, useRef, type ComponentRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import WebView, { type WebViewMessageEvent } from 'react-native-webview';
 import { webViewMessageAdapter } from '../../infrastructure/webview/WebViewMessageAdapter';
 import { makeDeposit, selectGoalById } from '../../infrastructure/redux/goalsSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { useThemeColors } from '../theme/useThemeColors';
+import { useThemedStyles } from '../theme/useThemedStyles';
 import type { ThemeColors } from '../theme/colors';
 
 // No auth system in this exam's scope — a fixed demo user/session is enough
@@ -21,8 +21,7 @@ export function GoalDetailScreen({ goalId, onBack }: GoalDetailScreenProps) {
   const dispatch = useAppDispatch();
   const webViewRef = useRef<ComponentRef<typeof WebView>>(null);
   const sessionIdRef = useRef(`session-${Date.now()}`);
-  const colors = useThemeColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useThemedStyles(createStyles);
 
   const sendInitSession = useCallback(() => {
     if (!goal) {

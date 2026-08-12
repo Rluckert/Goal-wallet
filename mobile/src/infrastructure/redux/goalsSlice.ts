@@ -7,7 +7,12 @@ import { CreateGoal } from '../../application/CreateGoal';
 import { AsyncStorageGoalsRepository } from '../repositories/AsyncStorageGoalsRepository';
 import { SavingsNotifier } from '../nativeLibrary/SavingsNotifier';
 
-/** Plain, serializable DTO — Redux state must not hold class instances. */
+/**
+ * Plain, serializable DTO — Redux state must not hold class instances.
+ * Structurally the same shape as AsyncStorageGoalsRepository's StoredGoal,
+ * and deliberately not shared with it — see that file's comment on why
+ * Redux state and the on-disk storage schema are kept independently mapped.
+ */
 export interface GoalDTO {
   id: string;
   name: string;

@@ -6,6 +6,13 @@ import { InMemoryGoalsRepository } from './InMemoryGoalsRepository';
 
 const STORAGE_KEY = '@goal-wallet/goals';
 
+/**
+ * Structurally the same shape as goalsSlice.ts's GoalDTO, and deliberately
+ * not shared with it: this is the on-disk storage schema, GoalDTO is Redux's
+ * state shape. Keeping them separate means a future storage format change
+ * (e.g. adding a schema version field) doesn't ripple into Redux state, and
+ * vice versa — the duplication is the cost of that isolation, not an oversight.
+ */
 interface StoredGoal {
   id: string;
   name: string;
@@ -50,23 +57,25 @@ export class AsyncStorageGoalsRepository implements GoalsRepository {
 
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (raw === null) {
-      // First launch — no stored data yet. Seed with the default goals and
-      // persist that seed immediately, so it's the baseline going forward.
-      this.cache = new InMemoryGoalsRepository();
-      await this.persist(this.cache);
-      return this.cache;
+      // First launch — no stored data yet.
+      return this.seedAndPersistDefaults();
     }
 
     try {
       const stored: StoredGoal[] = JSON.parse(raw);
       this.cache = new InMemoryGoalsRepository(stored.map(fromStoredGoal));
+      return this.cache;
     } catch {
       // Corrupted storage (bad JSON, or a shape an older/newer app version
       // wrote) — treat the same as "no storage yet" rather than crashing.
-      this.cache = new InMemoryGoalsRepository();
-      await this.persist(this.cache);
+      return this.seedAndPersistDefaults();
     }
+  }
 
+  /** Seeds the cache with InMemoryGoalsRepository's own default goals and persists that seed immediately, so it's the baseline going forward. */
+  private async seedAndPersistDefaults(): Promise<InMemoryGoalsRepository> {
+    this.cache = new InMemoryGoalsRepository();
+    await this.persist(this.cache);
     return this.cache;
   }
 

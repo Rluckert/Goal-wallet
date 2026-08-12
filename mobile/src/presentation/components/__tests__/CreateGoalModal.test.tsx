@@ -37,19 +37,21 @@ function renderModal(visible = true) {
 }
 
 describe('CreateGoalModal', () => {
-  it('shows an inline error and does not dispatch when the name is empty', async () => {
+  it('surfaces CreateGoal\'s real validation error for an empty name, without adding a goal', async () => {
     const { getByTestId, store } = renderModal();
 
     fireEvent.changeText(getByTestId('create-goal-amount-input'), '500');
     fireEvent.press(getByTestId('create-goal-submit'));
 
     await waitFor(() => {
-      expect(getByTestId('create-goal-error').props.children).toBe('Enter a name for your goal.');
+      expect(getByTestId('create-goal-error').props.children).toBe(
+        'CreateGoal: name must not be empty.',
+      );
     });
     expect(selectAllGoals(store.getState())).toHaveLength(0);
   });
 
-  it('shows an inline error and does not dispatch when the amount is invalid', async () => {
+  it("surfaces CreateGoal's real validation error for a non-positive amount, without adding a goal", async () => {
     const { getByTestId, store } = renderModal();
 
     fireEvent.changeText(getByTestId('create-goal-name-input'), 'New Bike');
@@ -58,8 +60,21 @@ describe('CreateGoalModal', () => {
 
     await waitFor(() => {
       expect(getByTestId('create-goal-error').props.children).toBe(
-        'Enter a target amount greater than 0.',
+        'CreateGoal: targetAmount must be greater than 0.',
       );
+    });
+    expect(selectAllGoals(store.getState())).toHaveLength(0);
+  });
+
+  it("surfaces Money's real validation error for a non-numeric amount, without adding a goal", async () => {
+    const { getByTestId, store } = renderModal();
+
+    fireEvent.changeText(getByTestId('create-goal-name-input'), 'New Bike');
+    fireEvent.changeText(getByTestId('create-goal-amount-input'), 'not a number');
+    fireEvent.press(getByTestId('create-goal-submit'));
+
+    await waitFor(() => {
+      expect(getByTestId('create-goal-error').props.children).toContain('must be finite');
     });
     expect(selectAllGoals(store.getState())).toHaveLength(0);
   });

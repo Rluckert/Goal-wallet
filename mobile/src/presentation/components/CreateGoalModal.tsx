@@ -10,19 +10,6 @@ export interface CreateGoalModalProps {
   onClose: () => void;
 }
 
-/** Plain Number() parsing, matching web/src/main.ts's own — deliberately not
- * reintroducing native locale-aware parsing after removing parseDepositAmount. */
-function parseTargetAmount(raw: string): number | null {
-  if (raw.trim() === '') {
-    return null;
-  }
-  const amount = Number(raw);
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return null;
-  }
-  return Math.round(amount * 100) / 100;
-}
-
 export function CreateGoalModal({ visible, onClose }: CreateGoalModalProps) {
   const dispatch = useAppDispatch();
   const styles = useThemedStyles(createStyles);
@@ -44,24 +31,24 @@ export function CreateGoalModal({ visible, onClose }: CreateGoalModalProps) {
 
   const handleCreate = async () => {
     setError(null);
-
-    if (name.trim() === '') {
-      setError('Enter a name for your goal.');
-      return;
-    }
-    const targetAmount = parseTargetAmount(rawAmount);
-    if (targetAmount === null) {
-      setError('Enter a target amount greater than 0.');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      await dispatch(createGoal({ name, targetAmount })).unwrap();
+      // No client-side re-validation of name/amount here — CreateGoal
+      // (application/) is the one place that rule lives. Duplicating it in
+      // the modal risked the two drifting; instead, the real thrown message
+      // (e.g. "CreateGoal: targetAmount must be greater than 0.") surfaces
+      // directly, plain Number() parsing matching web/src/main.ts's own.
+      await dispatch(createGoal({ name, targetAmount: Number(rawAmount) })).unwrap();
       reset();
       onClose();
-    } catch {
-      setError('Could not create the goal. Try again.');
+    } catch (err) {
+      // RTK's unwrap() throws the thunk's serialized error (a plain
+      // {message, name, ...} shape, not an Error instance) on rejection.
+      const message =
+        err !== null && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : 'Could not create the goal. Try again.';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }

@@ -21,6 +21,23 @@ In `mobile/package.json`:
 
 Then `npm install` from `mobile/`. Autolinking (React Native's CLI-based autolinking, not Expo's) picks up the `android/` folder automatically via this package's `react-native-builder-bob`/codegen config in `package.json` — no manual `MainApplication` edits needed. The library must be **built** first (`npm run prepare` inside `libreria/`, which runs `bob build` and produces `lib/module` + `lib/typescript`) since `package.json`'s `main`/`types` fields point there, not at `src/`.
 
+## Example app (manual verification)
+
+`example/` is a real, versioned RN 0.81.4 app (not a throwaway) used to manually verify the native module actually builds, links, and works end to end — a TurboModule can't be verified in isolation, it needs a consuming app. It links this library via `"rn-savings-notifier": "file:.."` and renders both `notifyGoalCompleted` and `<DepositInput />` on screen (`example/App.tsx`).
+
+```bash
+cd libreria && npm run prepare   # (re)build lib/ before linking
+cd example && npm install
+# Android emulator running, then:
+cd android && ./gradlew app:installDebug   # see note below
+npx react-native start                     # in another terminal
+adb reverse tcp:8081 tcp:8081 && adb shell am start -n com.example/.MainActivity
+```
+
+This confirmed the TurboModule Codegen (C++/JNI) compiles for all 4 ABIs, autolinking discovers the library without manual native edits, and both methods work on-device (Toast on `notifyGoalCompleted`, haptic + resolved amount on a valid deposit, Toast + inline error on an invalid one).
+
+**Windows-specific note:** `npx react-native run-android` fails on this machine — `@react-native-community/cli`'s subprocess spawn of `gradlew.bat` errors with "not recognized as an internal or external command", even though `gradlew.bat` itself runs fine when invoked directly. Worked around by running `gradlew.bat app:installDebug` directly, `npx react-native start` in a separate process, and `adb`/`am start` by hand — this is what `run-android` automates internally. `example/metro.config.js` also needed `watchFolders` (to see the library's source via the `file:` symlink) and a narrow `resolver.blockList` for `libreria/node_modules/{react,react-native,@react-native}` specifically — watching the library root otherwise pulls in *its* react-native devDependency (a different version, used only for the library's own tests) alongside the app's, which breaks Metro's codegen for React Native's own internal components.
+
 ## Public API
 
 ```ts

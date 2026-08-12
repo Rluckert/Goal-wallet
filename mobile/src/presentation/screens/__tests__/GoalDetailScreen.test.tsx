@@ -18,6 +18,18 @@ jest.mock('rn-savings-notifier', () => ({
   showConfirmDialog: jest.fn(),
 }));
 
+// goalsSlice's makeDeposit thunk reads/writes through the real
+// AsyncStorageGoalsRepository (not mocked here, only its dependency is) —
+// getItem resolving null makes it fall back to the default in-memory seed,
+// which includes goal g-1 matching this file's GOAL fixture below.
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn().mockResolvedValue(null),
+    setItem: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // Everything the test needs lives inside the factory closure (rather than
 // referencing outer-scope variables, which jest.mock's hoisting forbids) and
 // is exposed on the mocked module's exports, fetched below via requireMock.

@@ -3,7 +3,7 @@ import { computeProgressPercent } from '../../domain/Progress';
 import type { SavingsGoal } from '../../domain/SavingsGoal';
 import { GetGoals } from '../../application/GetGoals';
 import { MakeDeposit } from '../../application/MakeDeposit';
-import { InMemoryGoalsRepository } from '../repositories/InMemoryGoalsRepository';
+import { AsyncStorageGoalsRepository } from '../repositories/AsyncStorageGoalsRepository';
 import { SavingsNotifier } from '../nativeLibrary/SavingsNotifier';
 
 /** Plain, serializable DTO — Redux state must not hold class instances. */
@@ -40,7 +40,7 @@ const initialState: GoalsState = {
  * slice makes. No extra composition-root indirection for a project this
  * size — this is the one place infrastructure/ wires application/ up.
  */
-const repository = new InMemoryGoalsRepository();
+const repository = new AsyncStorageGoalsRepository();
 
 export const loadGoals = createAsyncThunk('goals/load', async () => {
   const goals = await new GetGoals(repository).execute();

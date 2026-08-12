@@ -4,7 +4,7 @@ import {
   savingsGoalNearOverDeposit,
 } from '../../../domain/__fixtures__/SavingsGoal.fixtures';
 
-jest.mock('../../repositories/InMemoryGoalsRepository');
+jest.mock('../../repositories/AsyncStorageGoalsRepository');
 // Explicit factory — an automock would still require the real module first to
 // introspect its shape, which would import rn-savings-notifier and crash with
 // a TurboModuleRegistry "not found" invariant outside a real native runtime.
@@ -12,7 +12,7 @@ jest.mock('../../nativeLibrary/SavingsNotifier', () => ({
   SavingsNotifier: { notifyGoalCompleted: jest.fn() },
 }));
 
-import { InMemoryGoalsRepository } from '../../repositories/InMemoryGoalsRepository';
+import { AsyncStorageGoalsRepository } from '../../repositories/AsyncStorageGoalsRepository';
 import { SavingsNotifier } from '../../nativeLibrary/SavingsNotifier';
 import {
   goalsReducer,
@@ -24,12 +24,12 @@ import {
   type GoalDTO,
 } from '../goalsSlice';
 
-const MockedRepository = InMemoryGoalsRepository as jest.MockedClass<typeof InMemoryGoalsRepository>;
+const MockedRepository = AsyncStorageGoalsRepository as jest.MockedClass<typeof AsyncStorageGoalsRepository>;
 const MockedNotifier = SavingsNotifier as jest.Mocked<typeof SavingsNotifier>;
 
-// goalsSlice.ts instantiates `new InMemoryGoalsRepository()` once at module load —
+// goalsSlice.ts instantiates `new AsyncStorageGoalsRepository()` once at module load —
 // this is that same singleton instance, now with auto-mocked methods.
-const repositoryInstance = MockedRepository.mock.instances[0] as jest.Mocked<InMemoryGoalsRepository>;
+const repositoryInstance = MockedRepository.mock.instances[0] as jest.Mocked<AsyncStorageGoalsRepository>;
 
 function buildStore() {
   return configureStore({ reducer: { goals: goalsReducer } });

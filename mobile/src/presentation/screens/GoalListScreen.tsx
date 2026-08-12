@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { DepositInput } from '../../infrastructure/nativeLibrary/DepositInput';
 import {
@@ -7,6 +8,8 @@ import {
   type GoalDTO,
 } from '../../infrastructure/redux/goalsSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
+import { useThemeColors } from '../theme/useThemeColors';
+import type { ThemeColors } from '../theme/colors';
 
 export interface GoalListScreenProps {
   onSelectGoal: (goalId: string) => void;
@@ -15,6 +18,8 @@ export interface GoalListScreenProps {
 export function GoalListScreen({ onSelectGoal }: GoalListScreenProps) {
   const goals = useAppSelector(selectAllGoals);
   const dispatch = useAppDispatch();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.container} testID="goal-list-screen">
@@ -45,6 +50,8 @@ function GoalCard({
   onDeposit: (amount: number) => void;
 }) {
   const percent = selectGoalProgress(goal);
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.card} testID={`goal-card-${goal.id}`}>
@@ -59,36 +66,42 @@ function GoalCard({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  empty: {
-    color: '#6b7280',
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  goalName: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  amounts: {
-    color: '#6b7280',
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  depositInput: {
-    marginTop: 4,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 16,
+      backgroundColor: colors.background,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
+      marginBottom: 12,
+      color: colors.text,
+    },
+    empty: {
+      color: colors.textSecondary,
+    },
+    card: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      backgroundColor: colors.surface,
+    },
+    goalName: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    amounts: {
+      color: colors.textSecondary,
+      marginTop: 4,
+      marginBottom: 12,
+    },
+    depositInput: {
+      marginTop: 4,
+    },
+  });
+}

@@ -86,7 +86,17 @@ mobile/src/
                         hooks, never reaches into infrastructure/ internals directly
 ```
 
-`domain/` → `application/` → `infrastructure/`/`presentation/` is a one-way dependency direction: `application/` depends on a repository *interface*, never a concrete `infrastructure/` class, so the direction can't silently invert. Checkable with `mobile/.claude/agents/ddd-boundary-reviewer.md`.
+Dependency direction is one-way: `presentation/` → `infrastructure/` → `application/` → `domain/`, with `domain/` importing nothing. `application/` depends on a repository *interface* (`GoalsRepository`), never a concrete `infrastructure/` class, so the direction can't silently invert. Checkable with `mobile/.claude/agents/ddd-boundary-reviewer.md`.
+
+```
+presentation/  ──imports──▶  infrastructure/  ──imports──▶  application/  ──imports──▶  domain/
+                                    │                              │
+                                    │ implements                   │ depends on
+                                    ▼                              ▼
+                        AsyncStorageGoalsRepository  ─ ─ ─▶  «interface» GoalsRepository
+```
+
+`AsyncStorageGoalsRepository` (in `infrastructure/`) *implements* the `GoalsRepository` interface that `CreateGoal`/`MakeDeposit`/`GetGoals` (in `application/`) depend on — the Dependency Inversion Principle in action: the concrete class folds into the contract the inner layer defines, not the other way around.
 
 ### Architecture decisions
 

@@ -2,7 +2,7 @@ import { useCallback, useRef, type ComponentRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import WebView, { type WebViewMessageEvent } from 'react-native-webview';
 import { webViewMessageAdapter } from '../../infrastructure/webview/WebViewMessageAdapter';
-import { makeDeposit, selectGoalById } from '../../infrastructure/redux/goalsSlice';
+import { makeDeposit, selectGoalById, type GoalDTO } from '../../infrastructure/redux/goalsSlice';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { useThemedStyles } from '../theme/useThemedStyles';
 import type { ThemeColors } from '../theme/colors';
@@ -18,15 +18,35 @@ export interface GoalDetailScreenProps {
 
 export function GoalDetailScreen({ goalId, onBack }: GoalDetailScreenProps) {
   const goal = useAppSelector(state => selectGoalById(state, goalId));
+  const styles = useThemedStyles(createStyles);
+
+  return (
+    <View style={styles.container} testID="goal-detail-screen">
+      <Text style={styles.backLink} onPress={onBack} testID="goal-detail-back">
+        &larr; Back
+      </Text>
+      {goal ? <GoalWebView goal={goal} webViewStyle={styles.webView} /> : <Text>Goal not found.</Text>}
+    </View>
+  );
+}
+
+interface GoalWebViewProps {
+  goal: GoalDTO;
+  webViewStyle: ReturnType<typeof createStyles>['webView'];
+}
+
+/**
+ * Split out of GoalDetailScreen so `goal` arrives already narrowed to
+ * non-undefined via props, instead of a runtime `if (!goal) return` guard
+ * inside sendInitSession that nothing could ever trigger (this only mounts
+ * once the parent has confirmed goal exists).
+ */
+function GoalWebView({ goal, webViewStyle }: GoalWebViewProps) {
   const dispatch = useAppDispatch();
   const webViewRef = useRef<ComponentRef<typeof WebView>>(null);
   const sessionIdRef = useRef(`session-${Date.now()}`);
-  const styles = useThemedStyles(createStyles);
 
   const sendInitSession = useCallback(() => {
-    if (!goal) {
-      return;
-    }
     const payload = webViewMessageAdapter.buildInitSessionPayload(sessionIdRef.current, DEMO_USER, goal);
     webViewRef.current?.postMessage(payload);
   }, [goal]);
@@ -41,35 +61,19 @@ export function GoalDetailScreen({ goalId, onBack }: GoalDetailScreenProps) {
     [dispatch],
   );
 
-  if (!goal) {
-    return (
-      <View style={styles.container} testID="goal-detail-screen">
-        <Text style={styles.backLink} onPress={onBack} testID="goal-detail-back">
-          &larr; Back
-        </Text>
-        <Text>Goal not found.</Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container} testID="goal-detail-screen">
-      <Text style={styles.backLink} onPress={onBack} testID="goal-detail-back">
-        &larr; Back
-      </Text>
-      <WebView
-        ref={webViewRef}
-        // Android only — packaged as a local asset per web/README.md. iOS
-        // loading (a different bundle-resource path) is a known limitation,
-        // consistent with libreria/README.md's own iOS note.
-        source={{ uri: 'file:///android_asset/webapp/index.html' }}
-        originWhitelist={['*']}
-        onLoadEnd={sendInitSession}
-        onMessage={handleMessage}
-        style={styles.webView}
-        testID="goal-detail-webview"
-      />
-    </View>
+    <WebView
+      ref={webViewRef}
+      // Android only — packaged as a local asset per web/README.md. iOS
+      // loading (a different bundle-resource path) is a known limitation,
+      // consistent with libreria/README.md's own iOS note.
+      source={{ uri: 'file:///android_asset/webapp/index.html' }}
+      originWhitelist={['*']}
+      onLoadEnd={sendInitSession}
+      onMessage={handleMessage}
+      style={webViewStyle}
+      testID="goal-detail-webview"
+    />
   );
 }
 
